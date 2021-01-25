@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+    
+
+   </head>
+   <body>
+      <div class="container-fluid">
+
+        <div class="row mb-3">
+            <div class="col-1"></div>
+            <div class="col-10 mt-3 mb-3">
+                <a href="#" onclick="start_auction()">start auction</a>
+                <span> | </span>
+                <a href="#" onclick="pause_auction()">pause auction</a>
+                <span> | </span>
+                <a href="#" onclick="reset_auction()">reset auction</a>      
+            </div>
+            <div class="col-1"></div>
+            <br>
+            <div style="border-bottom: solid 1px black"></div>
+        </div>
+
+        <div style="font-size:12px" class="row">
+            <div class="col-1"></div>
+            <div class="col-2">
+                <div  id="report"></div>
+            </div>
+            <div class="col-5">
+                <div id="table"></div>
+                <hr>
+            </div>
+            <div id="current_lot" class="col-3 ">
+                <img id="lot_img" style="height: 150px" src="/static/imgs/x1.png">
+                <hr>
+                <label for="lot_id">lot_id</label>
+                <input id="lot_id" class="form-control form-control-sm" type="text" placeholder="lot_id" readonly>
+
+                <label for="lot_title">lot_title</label>
+                <input id="lot_title" class="form-control form-control-sm" type="text" placeholder="lot_title" readonly>
+    
+                <input id="lot_starting_time" class="form-control form-control-sm" type="hidden" placeholder="lot_starting_time" readonly>
+                <input id="lot_ending_time" class="form-control form-control-sm" type="hidden" placeholder="lot_ending_time" readonly>
+    
+                <label for="lot_remaining_time">lot_remaining_time</label>
+                <input id="lot_remaining_time" class="form-control form-control-sm" type="text" placeholder="lot_remaining_time" readonly>
+    
+                <label for="current_price">current_price</label>
+                <input id="current_price" class="form-control form-control-sm" type="text" placeholder="current_price" readonly>
+
+                <label for="currently_viewing">currently_viewing</label>
+                <input id="currently_viewing" class="form-control form-control-sm" type="text" placeholder="currently_viewing" readonly>
+
+
+                <hr>
+                <input  id="bid_amount" class="form-control form-control-sm" type="number" placeholder="Bid" value=10>
+                <br>
+
+                <button id="bid_btn" onclick="bid()" class="btn btn-primary btn-sm">Bid</button>
+                <div class="mt-2" id="bid_msg"></div>
+
+            </div>
+            <div class="col-1"></div>
+
+        </div>
+
+      </div>
+   </body>
+</html>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW" crossorigin="anonymous"></script>
+
+<script src="https://code.jquery.com/jquery-3.3.1.js"></script>
+<script src="https://cdn.socket.io/socket.io-3.0.1.min.js"></script>
+
+
+<script type="text/javascript">
+
+
+// * SOCKET IO * //
+
+$('#current_lot').hide()
+
+
+var socket = io();
+
+socket.on("update", function(data) {
+    console.log('update')
+    console.log(data)
+
+
+    if(data.hasOwnProperty('table')){
+        console.log('table exists')
+        $('#table').html(data.table)
+    }
+
+    if(data.hasOwnProperty('current_lot')){
+        console.log('current_lot exists')
+        console.log('data.current_lot: ', data['current_lot'])
+        var current_lot = data.current_lot
+        console.log(current_lot)
+
+        if (current_lot === null) {
+            // do nothing
+            $('#current_lot').hide()
+
+        } else {
+            $('#current_lot').show()
+
+            $("#lot_img").attr("src", '/static/imgs/x'+current_lot['lot_id']+'.png');
+            $('#lot_id').val(current_lot['lot_id'])
+            $('#lot_title').val(current_lot['lot_title'])
+            $('#lot_starting_time').val(current_lot['lot_starting_time'])
+            $('#lot_ending_time').val(current_lot['lot_ending_time'])
+            $('#lot_remaining_time').val(current_lot['lot_remaining_time'])
+            $('#current_price').val(current_lot['current_price'])
+            $('#bid_amount').val(current_lot['current_price']+5)
+
+            $('#currently_viewing').val(current_lot['currently_viewing'])
+
+
+        }
+    }
+
+    if (typeof(data.msg) != "undefined") {
+        $("#report").append(data.msg + "<br />");
+    }
+
+    
+});
+
+socket.on('disconnect', function(){
+    $("#report").append("You have been disconnected - Please Refresh the Browser <br />");
+});
+
+
+
+// * AJAX * //
+
+function start_auction(){
+    $.ajax({
+        method:"GET",
+        url: "start_auction",
+        datatype:"text",
+        data: {},
+        success: function(data) {
+            console.log('data: ', data)
+        },
+        error: function(error) {
+            console.log('error: ', error)
+        }
+    });
+} //end bid
+    
+function pause_auction(){
+    $.ajax({
+        method:"GET",
+        url: "pause_auction",
+        datatype:"text",
+        data: {},
+        success: function(data) {
+            console.log('data: ', data)
+        },
+        error: function(error) {
+            console.log('error: ', error)
+        }
+    });
+} //end bid
+
+function reset_auction(){
+        console.log('reset_auction')
+        $.ajax({
+        method:"GET",
+        url: "reset_auction",
+        datatype:"text",
+        data: {},
+        success: function(data) {
+            console.log('data: ', data)
+            $('#report').html('')
+        },
+        error: function(error) {
+            console.log('error: ', error)
+        }
+    });
+} //end bid
+
+function bid(){
+        console.log('bid')
+        $('#bid_msg').html('')
+        $.ajax({
+        method:"GET",
+        url: "bid",
+        datatype:"text",
+        data: {
+            bid_amount :$('#bid_amount').val(),
+        },
+        success: function(data) {
+            console.log('data: ', data)
+            $('#bid_msg').html(data)
+        },
+        error: function(error) {
+            console.log('error: ', error)
+        }
+    });
+} //end bid
+
+
+
+
+</script>
