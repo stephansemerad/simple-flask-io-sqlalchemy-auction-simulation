@@ -1,12 +1,13 @@
 #!/usr/bin/env python
-
 import eventlet
 eventlet.monkey_patch() # make sure to use eventlet and call eventlet.monkey_patch()
+
 from flask import Flask, render_template, request, g, session, make_response, current_app, redirect, url_for
 from flask_socketio import SocketIO, emit
 
 app = Flask(__name__, static_url_path='/static')
 app.config['SECRET_KEY'] = "secret"
+
 socketio = SocketIO(app, async_mode='eventlet', logger=False, engineio_logger=False)
 
 # Global Variables
@@ -110,9 +111,7 @@ def start_auction():
     # # 1. Change Status of all Lots
     lots = session.query(Lot)
     for lot in lots:
-        if lot.status == 'sold':
-            pass
-        else:
+        if lot.status == 'prebidding':
             lot.status = 'waiting'
             session.commit()
             print('starting job')
@@ -216,7 +215,7 @@ def bid():
                             ending_time = ending_time + timedelta(seconds=2)
                             ip = request.remote_addr
                             socketio.emit("update", {   
-                                                    "msg": f"{ip} has bid {bid_amount}",
+                                                    "msg": f"{ip} has bid {bid_amount} for {lot.id} | {lot.title}",
                                                     "table" : generate_table(),
                                                     "current_lot": generate_current_lot(),
                                                     },  broadcast =True  )
@@ -279,11 +278,6 @@ def generate_table():
         '''
     html += '''</tbody></table>'''
     return html
-
-
-
-
-
 
 def generate_current_lot():
     print('generate_current_lot')
